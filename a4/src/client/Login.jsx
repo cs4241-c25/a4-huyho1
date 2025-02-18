@@ -25,6 +25,10 @@ const Login = () => {
         }
     };
 
+    const handleGitHubLogin = () => {
+        window.location.href = "/auth/github";
+    };
+
     return (
         <div className="bg-blue-100 flex items-center justify-center min-h-screen">
             <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
@@ -61,6 +65,16 @@ const Login = () => {
                         Sign In
                     </button>
                 </form>
+
+                <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600">or</p>
+                    <button
+                        onClick={handleGitHubLogin}
+                        className="w-full mt-3 bg-gray-800 text-white py-2 rounded-lg transition"
+                    >
+                        Login with GitHub
+                    </button>
+                </div>
             </div>
         </div>
     );

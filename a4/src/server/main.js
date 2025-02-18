@@ -2,11 +2,13 @@ import express from "express";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GitHubStrategy } from "passport-github";
 import { MongoClient, ObjectId } from "mongodb";
 import compression from "compression";
 import ViteExpress from "vite-express";
 import dotenv from "dotenv";
 import tailwindcss from '@tailwindcss/vite'
+
 
 dotenv.config();
 
@@ -46,6 +48,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Local Strategy
 passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
@@ -60,6 +63,49 @@ passport.use(
         return done(err);
       }
     })
+);
+
+// GitHub Strategy
+passport.use(
+    new GitHubStrategy(
+        {
+          clientID: "Ov23liCspO6tL4MOXyoV",
+          clientSecret: "1d9e322c3511d0cd523c0f37c2497c771b1de80d",
+          callbackURL: "http://localhost:3000/auth/github/callback",
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            let user = await users_collection.findOne({ githubId: profile.id });
+
+            if (!user) {
+              user = {
+                username: profile.username,
+                githubId: profile.id,
+                email: (profile.emails && profile.emails[0]) ? profile.emails[0].value : null,
+              };
+
+              const result = await users_collection.insertOne(user);
+              user._id = result.insertedId;
+            }
+
+            return done(null, user);
+          } catch (err) {
+            return done(err);
+          }
+        }
+    )
+);
+
+app.get("/auth/github", passport.authenticate("github"));
+
+app.get("/auth/github/callback", passport.authenticate("github", { failureRedirect: "/" }),
+    (req, res) => {
+      if (!req.user) {
+        console.log('Authentication failed');
+        return res.redirect("/login");
+      }
+      res.redirect("/home");
+    }
 );
 
 passport.serializeUser((user, done) => {
